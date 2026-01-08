@@ -166,7 +166,7 @@ def main():
 
     changed = False
     generator = CredentialGenerator()
-    for entry, value in user_vars.iteritems():
+    for entry, value in user_vars.items():
         if value is None or all_args['regen'] is True:
             if entry.endswith('password') or entry.endswith('secret'):
                 changed = True
@@ -187,7 +187,7 @@ def main():
     # If changed is set to True, this will archive the old passwords
     if changed is True:
         user_vars_tar_file = '%s.tar' % user_vars_file
-        print('Creating backup file [ %s ]' % user_vars_tar_file)
+        print(('Creating backup file [ %s ]' % user_vars_tar_file))
         # Create a tarball if needed
         with tarfile.open(user_vars_tar_file, 'a') as tar:
             os.chmod(user_vars_tar_file, 0o600)
@@ -208,7 +208,7 @@ def main():
             )
         )
 
-    print('Operation Complete, [ %s ] is ready' % user_vars_file)
+    print(('Operation Complete, [ %s ] is ready' % user_vars_file))
 
 
 if __name__ == '__main__':

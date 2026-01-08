@@ -77,9 +77,9 @@ def recursive_dict_removal(inventory, purge_list):
     inventory -- inventory dictionary
     purge_list -- list of items to remove
     """
-    for key, value in inventory.iteritems():
+    for key, value in inventory.items():
         if isinstance(value, dict):
-            for _key, _value in value.iteritems():
+            for _key, _value in value.items():
                 if isinstance(_value, dict):
                     for item in purge_list:
                         if item in _value:
@@ -156,7 +156,7 @@ def get_all_groups(inventory):
     as values.
     """
     containers = {}
-    for container_name in inventory['_meta']['hostvars'].keys():
+    for container_name in list(inventory['_meta']['hostvars'].keys()):
 
         # Skip the default group names since they're not helpful (like aio1).
         if '_' not in container_name:
@@ -179,7 +179,7 @@ def get_groups_for_container(inventory, container_name):
     """
     # Beware, this dictionary comprehension requires Python 2.7, but we should
     # have this on openstack-ansible hosts already.
-    groups = {k for (k, v) in inventory.items() if
+    groups = {k for (k, v) in list(inventory.items()) if
               ('hosts' in v and
               container_name in v['hosts'])}
     return groups
@@ -215,11 +215,11 @@ def print_groups_per_container(inventory):
     ]
     table = prettytable.PrettyTable(required_list)
 
-    for container_name, groups in containers.iteritems():
+    for container_name, groups in containers.items():
         row = [container_name, ', '.join(sorted(groups))]
         table.add_row(row)
 
-    for tbl in table.align.keys():
+    for tbl in list(table.align.keys()):
         table.align[tbl] = 'l'
 
     return table
@@ -237,7 +237,7 @@ def print_containers_per_group(inventory):
     ]
     table = prettytable.PrettyTable(required_list)
 
-    for group_name in inventory.keys():
+    for group_name in list(inventory.keys()):
         containers = get_containers_for_group(inventory, group_name)
 
         # Don't show a group if it has no containers
@@ -253,7 +253,7 @@ def print_containers_per_group(inventory):
         row = [group_name, '\n'.join(containers)]
         table.add_row(row)
 
-    for tbl in table.align.keys():
+    for tbl in list(table.align.keys()):
         table.align[tbl] = 'l'
 
     return table
@@ -276,7 +276,7 @@ def print_inventory(inventory, sort_key):
         'container_types'
     ]
     table = prettytable.PrettyTable(required_list)
-    for key, values in _meta_data.iteritems():
+    for key, values in _meta_data.items():
         for rl in required_list:
             if rl not in values:
                 values[rl] = None
@@ -290,7 +290,7 @@ def print_inventory(inventory, sort_key):
                 row.append(values.get(_rl))
             else:
                 table.add_row(row)
-    for tbl in table.align.keys():
+    for tbl in list(table.align.keys()):
         table.align[tbl] = 'l'
     table.sortby = sort_key
     return table
@@ -309,15 +309,15 @@ def main():
     # Make a table with hosts in the left column and details about each in the
     # columns to the right
     if user_args['list_host'] is True:
-        print(print_inventory(inventory, user_args['sort']))
+        print((print_inventory(inventory, user_args['sort'])))
 
     # Groups in first column, containers in each group on the right
     elif user_args['list_groups'] is True:
-        print(print_groups_per_container(inventory))
+        print((print_groups_per_container(inventory)))
 
     # Containers in the first column, groups for each container on the right
     elif user_args['list_containers'] is True:
-        print(print_containers_per_group(inventory))
+        print((print_containers_per_group(inventory)))
     else:
         recursive_dict_removal(inventory, user_args['remove_item'])
         with open(environment_file, 'wb') as f_handle:

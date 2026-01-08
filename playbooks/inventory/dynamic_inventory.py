@@ -20,7 +20,7 @@ import datetime
 import json
 import netaddr
 import os
-import Queue
+import queue
 import random
 import tarfile
 import uuid
@@ -82,7 +82,7 @@ def get_ip_address(name, ip_q):
             return str(ip_addr)
     except AttributeError:
         return None
-    except Queue.Empty:
+    except queue.Empty:
         raise SystemExit(
             'Cannot retrieve requested amount of IP addresses. Increase the %s'
             ' range in your openstack_user_config.yml.' % name
@@ -199,7 +199,7 @@ def _append_container_types(inventory, host_type):
     :param inventory: ``dict``  Living dictionary of inventory
     :param host_type: ``str``  Name of the host type
     """
-    for _host in inventory['_meta']['hostvars'].keys():
+    for _host in list(inventory['_meta']['hostvars'].keys()):
         hdata = inventory['_meta']['hostvars'][_host]
         if 'container_name' in hdata:
             if hdata['container_name'].startswith(host_type):
@@ -224,7 +224,7 @@ def _append_to_host_groups(inventory, container_type, assignment, host_type,
 
     iph = inventory[physical_group_type]['hosts']
     iah = inventory[assignment]['hosts']
-    for hname, hdata in inventory['_meta']['hostvars'].iteritems():
+    for hname, hdata in inventory['_meta']['hostvars'].items():
         is_metal = False
         properties = hdata.get('properties')
         if properties:
@@ -256,7 +256,7 @@ def _append_to_host_groups(inventory, container_type, assignment, host_type,
                 # Append any options in config to the host_vars of a container
                 container_vars = host_options.get('container_vars')
                 if isinstance(container_vars, dict):
-                    for _keys, _vars in container_vars.items():
+                    for _keys, _vars in list(container_vars.items()):
                         # Copy the options dictionary for manipulation
                         if isinstance(_vars, dict):
                             options = _vars.copy()
@@ -362,7 +362,7 @@ def user_defined_setup(config, inventory, is_metal):
     :param is_metal: ``bol``  If true, a container entry will not be built
     """
     hvs = inventory['_meta']['hostvars']
-    for key, value in config.iteritems():
+    for key, value in config.items():
         if key.endswith('hosts'):
             if key not in inventory:
                 inventory[key] = {'hosts': []}
@@ -370,7 +370,7 @@ def user_defined_setup(config, inventory, is_metal):
             if value is None:
                 return
 
-            for _key, _value in value.iteritems():
+            for _key, _value in value.items():
                 if _key not in inventory['_meta']['hostvars']:
                     inventory['_meta']['hostvars'][_key] = {}
 
@@ -389,7 +389,7 @@ def user_defined_setup(config, inventory, is_metal):
                 hvs[_key]['properties'].update({'is_metal': is_metal})
 
                 if 'host_vars' in _value:
-                    for _k, _v in _value['host_vars'].items():
+                    for _k, _v in list(_value['host_vars'].items()):
                         hvs[_key][_k] = _v
 
                 append_if(array=USED_IPS, item=_value['ip'])
@@ -402,10 +402,10 @@ def skel_setup(environment_file, inventory):
     :param environment_file: ``dict`` Known environment information
     :param inventory: ``dict``  Living dictionary of inventory
     """
-    for key, value in environment_file.iteritems():
+    for key, value in environment_file.items():
         if key == 'version':
             continue
-        for _key, _value in value.iteritems():
+        for _key, _value in value.items():
             if _key not in inventory:
                 inventory[_key] = {}
                 if _key.endswith('container'):
@@ -433,7 +433,7 @@ def skel_load(skeleton, inventory):
     :param skeleton:
     :param inventory: ``dict``  Living dictionary of inventory
     """
-    for key, value in skeleton.iteritems():
+    for key, value in skeleton.items():
         _parse_belongs_to(
             key,
             belongs_to=value['belongs_to'],
@@ -450,7 +450,7 @@ def _load_optional_q(config, cidr_name):
     cidr = config.get(cidr_name)
     ip_q = None
     if cidr is not None:
-        ip_q = Queue.Queue()
+        ip_q = queue.Queue()
         _load_ip_q(cidr=cidr, ip_q=ip_q)
     return ip_q
 
@@ -638,7 +638,7 @@ def container_skel_load(container_skel, inventory, config):
     :param inventory: ``dict``  Living dictionary of inventory
     :param config: ``dict``  User defined information
     """
-    for key, value in container_skel.iteritems():
+    for key, value in container_skel.items():
         for assignment in value['contains']:
             for container_type in value['belongs_to']:
                 _add_container_hosts(
@@ -757,9 +757,9 @@ def _set_used_ips(user_defined_config, inventory):
                 append_if(array=USED_IPS, item=split_ip[0])
 
     # Find all used IP addresses and ensure that they are not used again
-    for host_entry in inventory['_meta']['hostvars'].values():
+    for host_entry in list(inventory['_meta']['hostvars'].values()):
         networks = host_entry.get('container_networks', dict())
-        for network_entry in networks.values():
+        for network_entry in list(networks.values()):
             address = network_entry.get('address')
             if address:
                 append_if(array=USED_IPS, item=address)
@@ -773,7 +773,7 @@ def _ensure_inventory_uptodate(inventory, container_skel):
 
     :param inventory: ``dict`` Living inventory of containers and hosts
     """
-    for key, value in inventory['_meta']['hostvars'].iteritems():
+    for key, value in inventory['_meta']['hostvars'].items():
         if 'container_name' not in value:
             value['container_name'] = key
 
@@ -783,7 +783,7 @@ def _ensure_inventory_uptodate(inventory, container_skel):
                 if rh == 'container_networks':
                     value[rh] = {}
 
-    for key, value in container_skel.iteritems():
+    for key, value in container_skel.items():
         item = inventory.get(key)
         hosts = item.get('hosts')
         if hosts:
@@ -835,7 +835,7 @@ def _merge_dict(base_items, new_items):
     :param new_items: ``dict``
     :return dictionary:
     """
-    for key, value in new_items.iteritems():
+    for key, value in new_items.items():
         if isinstance(value, dict):
             base_merge = _merge_dict(base_items.get(key, {}), value)
             base_items[key] = base_merge
@@ -972,9 +972,9 @@ def main():
 
     # Generate a list of all hosts and their used IP addresses
     hostnames_ips = {}
-    for _host, _vars in dynamic_inventory['_meta']['hostvars'].iteritems():
+    for _host, _vars in dynamic_inventory['_meta']['hostvars'].items():
         host_hash = hostnames_ips[_host] = {}
-        for _key, _value in _vars.iteritems():
+        for _key, _value in _vars.items():
             if _key.endswith('address') or _key == 'ansible_ssh_host':
                 host_hash[_key] = _value
 
